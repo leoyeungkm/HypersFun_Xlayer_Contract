@@ -205,7 +205,6 @@ HypersFun addresses a real and underserved market:
 ### Prerequisites
 - Node.js 18+
 - OKB on X Layer for gas
-- [OKLink API key](https://www.oklink.com/account/my-api) for contract verification
 
 ### Setup
 ```bash
@@ -213,7 +212,7 @@ git clone https://github.com/leoyeungkm/HypersFun_Xlayer_Contract.git
 cd HypersFun_Xlayer_Contract
 npm install
 cp .env.example .env
-# Set XLAYER_PRIVATE_KEY and OKLINK_API_KEY in .env
+# Set XLAYER_PRIVATE_KEY in .env
 ```
 
 ### Compile
@@ -229,7 +228,6 @@ npx hardhat run scripts/verify-all.ts --network xLayerMainnet
 ### .env Reference
 ```
 XLAYER_PRIVATE_KEY=0x...        # deployer private key (needs OKB for gas)
-OKLINK_API_KEY=...              # from https://www.oklink.com/account/my-api
 ```
 
 ---
