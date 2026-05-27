@@ -163,6 +163,30 @@ On-chain governance for the fund. HFUND holders:
 
 ---
 
+## Long / Short Trading via Aave
+
+HypersFun's fund vault is integrated with **Aave on X Layer** to enable fully on-chain leveraged long and short positions. The vault borrows assets through Aave's lending protocol to open directional trades — no centralised exchange or off-chain custody required.
+
+### Supported Assets
+
+| Asset | Long | Short |
+|---|---|---|
+| **xBTC** | ✓ | ✓ |
+| **xETH** | ✓ | ✓ |
+| **xSOL** | ✓ | ✓ |
+
+### How it works
+
+1. The vault supplies USDC as collateral to Aave
+2. Aave issues a credit line against the collateral
+3. The vault borrows the target asset (e.g. xBTC) to open a long, or borrows a stablecoin to short
+4. Positions are managed on-chain; PnL accrues directly to the vault's NAV
+5. All position changes require a **governance vote** — the community decides when to open, adjust, or close trades
+
+This design means every trade is transparent, auditable, and governed by HFUND holders — not a single fund manager.
+
+---
+
 ## Market Value
 
 HypersFun addresses a real and underserved market:
@@ -170,6 +194,7 @@ HypersFun addresses a real and underserved market:
 - **Tokenised fund management** is one of the fastest-growing segments in RWA and on-chain finance
 - Traditional on-chain funds (e.g. Yearn, dHEDGE) rely on custom AMM wrappers or centralised price feeds — not native DEX infrastructure
 - By building natively on V4 Hooks, HypersFun gains composability with the entire Uniswap ecosystem from day one
+- **Aave integration** unlocks real yield strategies (long/short xBTC, xETH, xSOL) that generate returns for HFUND holders
 - The tiered exit-fee structure and governance model are designed to attract long-term capital, not short-term speculation
 - X Layer's low gas fees make frequent NAV updates and small-ticket investments economically viable
 
