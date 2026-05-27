@@ -44,14 +44,8 @@ async function main() {
   console.log("=== HypersFun Contract Verification ===");
   console.log("Network: X Layer Mainnet (Chain ID 196)");
 
-  // 1. HyperFunMath — pure library, no constructor args
-  await verify(
-    // HyperFunMath is a library linked into HypersFunHook — verify separately
-    // if deployed as standalone, put its address here
-    HOOK, // placeholder — library is linked, not standalone
-    "contracts/HyperFunMath.sol:HyperFunMath",
-    []
-  );
+  // 1. HyperFunMath — internal library linked into HypersFunHook (not standalone)
+  //    No separate address; it's already included in the HypersFunHook verification above.
 
   // 2. FundVault
   await verify(VAULT, "contracts/FundVault.sol:FundVault", [
@@ -62,6 +56,8 @@ async function main() {
     DEPLOYER,              // treasury_
     POOL_MANAGER,          // poolManager_
     PERF_FEE,              // performanceFeeBps_
+    0,                     // maxSupply_ (0 = no cap)
+    0,                     // initialPriceE18_ (0 → defaults to 1e18 = $1)
   ]);
 
   // 3. HypersFunHook (deployed via Create2 — same args)

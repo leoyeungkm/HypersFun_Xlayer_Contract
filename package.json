@@ -4,22 +4,22 @@
   "description": "HypersFun V4 Hook contracts on X Layer (Chain ID 196)",
   "scripts": {
     "compile": "hardhat compile",
-    "verify:vault":  "hardhat run scripts/verify.ts --network xLayerMainnet",
-    "verify:hook":   "hardhat verify --network xLayerMainnet 0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8",
-    "verify:gov":    "hardhat run scripts/verify-gov.ts --network xLayerMainnet",
+    "verify:vault": "hardhat run scripts/verify.ts --network xLayerMainnet",
+    "verify:hook": "hardhat verify --network xLayerMainnet 0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8",
+    "verify:gov": "hardhat run scripts/verify-gov.ts --network xLayerMainnet",
     "verify:helper": "hardhat run scripts/verify-helper.ts --network xLayerMainnet",
-    "verify:all":    "hardhat run scripts/verify-all.ts --network xLayerMainnet"
+    "verify:all": "hardhat run scripts/verify-all.ts --network xLayerMainnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.0",
-    "hardhat": "^2.19.0",
     "dotenv": "^16.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.0.0"
+    "hardhat": "^2.19.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/contracts": "5.4.0",
     "@uniswap/v4-core": "^1.0.2",
     "@uniswap/v4-periphery": "^1.0.3"
   }
