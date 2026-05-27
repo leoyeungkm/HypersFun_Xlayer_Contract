@@ -1,58 +1,122 @@
-# HypersFun — Uniswap V4 Hook on X Layer
+# HypersFun — On-Chain Fund Platform Powered by Uniswap V4 Hook
 
-HypersFun is a decentralised fund platform built on **Uniswap V4** and deployed on **X Layer Mainnet (Chain ID 196)**. Investors buy/sell fund shares (HFUND) through a custom V4 Hook that embeds a bonding-curve AMM and routes profits to an on-chain fund vault. Governance token holders can vote to change the fund's trading strategy.
+> **Build-X Hackathon submission** — X Layer × Uniswap V4 Hook Track
 
----
-
-## Deployed Contracts
-
-| Contract | Address | Explorer |
-|---|---|---|
-| FundVault (HFUND) | `0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634` | [View](https://www.oklink.com/xlayer/address/0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634#code) |
-| HypersFunHook | `0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8` | [View](https://www.oklink.com/xlayer/address/0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8#code) |
-| VaultGovernance | `0xB001f47909285ef2E72fB2816D2d771F20425ef4` | [View](https://www.oklink.com/xlayer/address/0xB001f47909285ef2E72fB2816D2d771F20425ef4#code) |
-| SwapHelper | `0x1c4450C6864078d92bd67622f28eB77D2bed065B` | [View](https://www.oklink.com/xlayer/address/0x1c4450C6864078d92bd67622f28eB77D2bed065B#code) |
-
-> All contracts verified on [OKLink](https://www.oklink.com/xlayer).
+HypersFun is a fully on-chain, permissionless fund management platform built on top of **Uniswap V4's Hook mechanism**, deployed on **X Layer Mainnet**. It enables anyone to invest in a professionally managed USDC fund by trading fund shares (HFUND) directly through a Uniswap V4 pool — with pricing, fee collection, NAV accounting, and governance all handled transparently on-chain.
 
 ---
 
-## Architecture
+## The Problem
+
+Traditional DeFi liquidity pools price assets with constant-product formulas (x·y=k), which cannot reflect the true value of a managed fund. Fund shares should track **Net Asset Value (NAV)** — not arbitrary market sentiment. Existing solutions either rely on centralised custodians or expose investors to exploitable price manipulation. There is no native way in DeFi to create a fund where:
+
+- Share price is always anchored to verified on-chain NAV
+- Investors can freely enter and exit via a DEX
+- Fund strategy is governed by the investors themselves
+
+---
+
+## The Solution — HypersFun Hook
+
+HypersFun introduces a **custom Uniswap V4 Hook** that intercepts every swap in the HFUND/USDC pool and overrides the pricing engine with real-time NAV data. This creates a new type of liquidity pool that functions as a **fund subscription and redemption window** — rather than a speculative trading venue.
+
+### How it works
 
 ```
-User (USDC)
-    │
-    ▼
-HypersFunHook  ◄──── Uniswap V4 PoolManager
-    │  (bonding-curve pricing, fee collection)
-    ▼
-FundVault (ERC-20 / EIP-2612)
-    │  (NAV accounting, TWAP, exit-fee tiers)
-    ▼
-VaultGovernance
-    │  (proposals, quorum voting, mode changes)
-    ▼
-Fund Leader  ──►  External exchanges (trading)
+Investor (USDC)
+       │
+       │  swap USDC → HFUND  (buy shares)
+       ▼
+┌─────────────────────────────────────────────┐
+│          Uniswap V4 PoolManager             │
+│                                             │
+│  beforeSwap ──► HypersFunHook               │
+│                  │                          │
+│                  ├─ Read NAV from FundVault │
+│                  ├─ Bonding-curve depth     │
+│                  └─ Override swap price     │
+│                                             │
+│  afterSwap ───► Collect fees → FundVault    │
+└─────────────────────────────────────────────┘
+       │
+       ▼
+FundVault  (mint HFUND shares at NAV price)
+       │
+       ▼
+VaultGovernance  (HFUND holders vote on strategy)
+       │
+       ▼
+Fund Leader  ──►  Active trading on external markets
 ```
 
-### Contracts
+---
 
-| Contract | Description |
+## Key Innovations
+
+### 1. NAV-Anchored Pricing Inside a V4 Hook
+
+Most V4 Hook projects adjust fee tiers or add limit-order logic on top of the standard AMM. HypersFun goes further — the Hook **completely overrides the swap price** using the vault's real-time NAV per share. The custom `HyperFunMath` library computes each swap output based on:
+
+- Current on-chain NAV (total assets / total supply)
+- Virtual bonding-curve depth to provide slippage resistance on large orders
+- TWAP (10-minute time-weighted average) to prevent flash-loan NAV manipulation
+
+This is the first implementation of **NAV-anchored pricing delivered natively through a V4 Hook**.
+
+### 2. Bonding-Curve + NAV Hybrid AMM
+
+Pure NAV pricing would allow zero-cost arbitrage between NAV and market price. HypersFun combines NAV pricing with a **virtual bonding curve** that charges increasing slippage for larger orders. This:
+
+- Discourages large flash-loan attacks against the fund
+- Provides natural exit liquidity for redemptions of any size
+- Self-adjusts as total deposits grow, without any external intervention
+
+### 3. Tiered Exit Fees — Rewarding Long-Term Holders
+
+A tiered redemption fee structure is enforced on-chain, keyed to how long each investor has held their shares:
+
+| Holding Period | Exit Fee |
 |---|---|
-| **FundVault** | ERC-20 fund share token (HFUND). Tracks NAV per share, TWAP, performance fees, and tiered exit fees. Investors deposit USDC to mint shares and redeem shares for USDC. |
-| **HypersFunHook** | Uniswap V4 Hook implementing `beforeSwap` / `afterSwap`. Embeds a virtual bonding-curve AMM so HFUND/USDC swaps price shares off on-chain NAV. Collects trading fees for the vault. |
-| **HyperFunMath** | Pure library. Bonding-curve price and swap math used by HypersFunHook. |
-| **SwapHelper** | Thin helper that wraps PoolManager swap calls for external integrations. |
-| **VaultGovernance** | Token-weighted on-chain governance. HFUND holders lock tokens to propose and vote on fund-mode changes (e.g. active trading vs. passive). |
+| < 7 days | 15% |
+| 7 – 30 days | 8% |
+| 30 – 90 days | 3% |
+| > 90 days | 0% |
+
+This eliminates short-term speculation and aligns investor incentives with the fund's long-term performance — a mechanism not previously available natively in DeFi fund infrastructure.
+
+### 4. Gasless EIP-2612 Permit — One Signature, Full Flow
+
+Investors never need to send a separate `approve` transaction. The buy flow uses **EIP-2612 off-chain permit signatures**: a single MetaMask signature authorises the exact USDC amount needed for the swap, which is consumed atomically in the same transaction. This reduces friction, lowers gas costs, and prevents over-approvals.
+
+### 5. On-Chain Governance by Investors
+
+Fund strategy changes require a quorum vote by HFUND holders via `VaultGovernance`. Investors:
+
+- Lock HFUND tokens to submit proposals
+- Vote for or against strategy changes (e.g. switching from active trading to passive mode)
+- Execute passed proposals after a time-lock period
+
+The fund leader cannot unilaterally change strategy without investor consent — enforced entirely on-chain.
 
 ---
 
-## Pool Key (X Layer Mainnet)
+## Contracts (X Layer Mainnet — Chain ID 196)
+
+| Contract | Address | Verified Source |
+|---|---|---|
+| **FundVault** (HFUND) | `0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634` | [OKLink](https://www.oklink.com/xlayer/address/0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634#code) |
+| **HypersFunHook** | `0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8` | [OKLink](https://www.oklink.com/xlayer/address/0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8#code) |
+| **VaultGovernance** | `0xB001f47909285ef2E72fB2816D2d771F20425ef4` | [OKLink](https://www.oklink.com/xlayer/address/0xB001f47909285ef2E72fB2816D2d771F20425ef4#code) |
+| **SwapHelper** | `0x1c4450C6864078d92bd67622f28eB77D2bed065B` | [OKLink](https://www.oklink.com/xlayer/address/0x1c4450C6864078d92bd67622f28eB77D2bed065B#code) |
+
+> All contracts are **open-source and verified** on OKLink. Anyone can audit the full logic.
+
+### Uniswap V4 Pool Key
 
 | Field | Value |
 |---|---|
-| currency0 | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` (USDC) |
-| currency1 | `0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634` (HFUND) |
+| currency0 (USDC) | `0x74b7F16337b8972027F6196A17a631aC6dE26d22` |
+| currency1 (HFUND) | `0x750F9F25Bd7E4144077C8E8A22E6D4721ebB8634` |
 | fee | `0` |
 | tickSpacing | `60` |
 | hooks | `0xe256dDe4e526ea7A01585c35B5B4e0861e642AC8` |
@@ -60,32 +124,81 @@ Fund Leader  ──►  External exchanges (trading)
 
 ---
 
+## Contract Overview
+
+### FundVault.sol
+ERC-20 fund share token (HFUND) with EIP-2612 permit support. Manages:
+- USDC deposits → HFUND minting at current NAV
+- HFUND redemptions → USDC withdrawals with tiered exit fees
+- NAV per share calculation (total USDC assets / total HFUND supply)
+- 10-minute TWAP to prevent flash-loan NAV manipulation
+- Performance fee (10%) on profits, accrued to the treasury
+- Hard supply cap and configurable initial price
+
+### HypersFunHook.sol
+The core V4 Hook. Implements `beforeSwap`, `afterSwap`, `beforeAddLiquidity`, and `beforeRemoveLiquidity` to:
+- Replace Uniswap's standard x·y=k pricing with NAV-based bonding-curve math
+- Enforce that all pool liquidity flows through the vault (no external LP positions)
+- Collect trading fees and route them to FundVault
+- Guard pool initialisation and curve parameters
+
+### HyperFunMath.sol
+Pure Solidity library containing all bonding-curve and swap math. Separated for clean auditability and potential reuse in other projects.
+
+### SwapHelper.sol
+Utility contract for external integrations. Wraps the Uniswap V4 `PoolManager.swap()` call with a clean interface for frontend and contract-to-contract interactions.
+
+### VaultGovernance.sol
+On-chain governance for the fund. HFUND holders:
+- Lock a minimum token amount to create proposals
+- Vote for/against within a voting window
+- Execute approved proposals after a mandatory delay
+- Supports configurable quorum (basis points of total supply)
+
+---
+
+## Market Value
+
+HypersFun addresses a real and underserved market:
+
+- **Tokenised fund management** is one of the fastest-growing segments in RWA and on-chain finance
+- Traditional on-chain funds (e.g. Yearn, dHEDGE) rely on custom AMM wrappers or centralised price feeds — not native DEX infrastructure
+- By building natively on V4 Hooks, HypersFun gains composability with the entire Uniswap ecosystem from day one
+- The tiered exit-fee structure and governance model are designed to attract long-term capital, not short-term speculation
+- X Layer's low gas fees make frequent NAV updates and small-ticket investments economically viable
+
+---
+
 ## Development
 
 ### Prerequisites
-
 - Node.js 18+
-- An X Layer wallet with OKB for gas
-- An [OKLink API key](https://www.oklink.com/account/my-api) for verification
+- OKB on X Layer for gas
+- [OKLink API key](https://www.oklink.com/account/my-api) for contract verification
 
 ### Setup
-
 ```bash
+git clone https://github.com/leoyeungkm/HypersFun_Xlayer_Contract.git
+cd HypersFun_Xlayer_Contract
 npm install
 cp .env.example .env
-# Fill in XLAYER_PRIVATE_KEY and OKLINK_API_KEY
+# Set XLAYER_PRIVATE_KEY and OKLINK_API_KEY in .env
 ```
 
 ### Compile
-
 ```bash
 npx hardhat compile
 ```
 
 ### Verify on OKLink
-
 ```bash
 npx hardhat run scripts/verify-all.ts --network xLayerMainnet
+```
+
+### .env Reference
+```
+XLAYER_PRIVATE_KEY=0x...        # deployer private key (needs OKB for gas)
+OKLINK_API_KEY=...              # from https://www.oklink.com/account/my-api
 ```
 
 ---
