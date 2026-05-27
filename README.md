@@ -1,4 +1,4 @@
-# HypersFun — On-Chain Fund Platform Powered by Uniswap V4 Hook
+# OKHypersFun — On-Chain Fund Platform Powered by Uniswap V4 Hook
 
 > **Build-X Hackathon submission** — X Layer × Uniswap V4 Hook Track
 
