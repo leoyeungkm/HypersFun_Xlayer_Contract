@@ -4,7 +4,9 @@
 
 **Live Frontend (X Layer):** https://xlayer.hypers.fun/
 
-HypersFun is a fully on-chain, permissionless fund management platform built on top of **Uniswap V4's Hook mechanism**, deployed on **X Layer Mainnet**. It enables anyone to invest in a professionally managed USDC fund by trading fund shares (HFUND) directly through a Uniswap V4 pool — with pricing, fee collection, NAV accounting, and governance all handled transparently on-chain.
+HypersFun is a fully on-chain, permissionless fund management platform built on top of **Uniswap V4's Hook mechanism**, deployed on **X Layer Mainnet**. Investors buy and sell fund shares (HFUND) directly through a Uniswap V4 pool, with pricing, fee collection, NAV accounting, and strategy governance all managed transparently on-chain — no centralised fund manager required.
+
+> **Origin:** HypersFun was originally built and production-tested on **HyperEVM**, where we validated the core product idea — on-chain fund management with bonding-curve pricing, tiered exit fees, and community governance. Having proven the concept in a live environment, we rebuilt the architecture natively around **Uniswap V4 Hooks** and brought it to X Layer, leveraging V4's customisable pool logic and X Layer's low-cost EVM infrastructure.
 
 > **Origin:** HypersFun was originally conceived and battle-tested on **HyperEVM**, where we validated the core product idea — on-chain fund management with a bonding-curve pricing engine, tiered exit fees, and investor governance. After proving the concept in production, we rebuilt the architecture natively around **Uniswap V4 Hooks** and deployed to X Layer, taking full advantage of V4's customisable pool logic and X Layer's low-cost EVM environment.
 
@@ -47,10 +49,10 @@ Investor (USDC)
 FundVault  (mint HFUND shares at NAV price)
        │
        ▼
-VaultGovernance  (HFUND holders vote on strategy)
+VaultGovernance  (HFUND holders propose & vote on strategy)
        │
        ▼
-Fund Leader  ──►  Active trading on external markets
+Community-approved strategy execution
 ```
 
 ---
@@ -100,7 +102,7 @@ Fund strategy changes require a quorum vote by HFUND holders via `VaultGovernanc
 - Vote for or against strategy changes (e.g. switching from active trading to passive mode)
 - Execute passed proposals after a time-lock period
 
-The fund leader cannot unilaterally change strategy without investor consent — enforced entirely on-chain.
+There is no centralised fund leader. Strategy is determined entirely by the community — enforced on-chain.
 
 ---
 
