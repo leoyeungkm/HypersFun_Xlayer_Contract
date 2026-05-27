@@ -3,7 +3,6 @@
 > **Build-X Hackathon submission** — X Layer × Uniswap V4 Hook Track
 
 **Live Frontend:** https://xlayer.hypers.fun/
-**Docs:** https://hyper-fun.gitbook.io/hyperfun/
 
 HypersFun is a fully on-chain, permissionless fund management platform built on top of **Uniswap V4's Hook mechanism**, deployed on **X Layer Mainnet**. It enables anyone to invest in a professionally managed USDC fund by trading fund shares (HFUND) directly through a Uniswap V4 pool — with pricing, fee collection, NAV accounting, and governance all handled transparently on-chain.
 
