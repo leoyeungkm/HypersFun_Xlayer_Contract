@@ -981,8 +981,12 @@ contract FundVault is ERC20, ERC20Permit, ReentrancyGuard {
             ISwapRouterV3(V3_ROUTER).exactInput(ISwapRouterV3.ExactInputParams({ path: toUsdt, recipient: address(this), amountIn: actualUsdc, amountOutMinimum: 0 }));
         }
 
-        uint256 assetNeeded = pos.borrowedAmount * 10050 / 10000;
-        if (assetNeeded <= pos.borrowedAmount) assetNeeded = pos.borrowedAmount + 1;
+        // Use actual outstanding debt so approval covers total when multiple positions share one Aave account.
+        uint256 currentDebt = IERC20(pos.debtToken).balanceOf(address(this));
+        if (currentDebt == 0) { pos.open = false; return; } // debt already repaid (e.g. by a prior close)
+
+        uint256 assetNeeded = currentDebt * 10050 / 10000;
+        if (assetNeeded <= currentDebt) assetNeeded = currentDebt + 1;
         uint256 totalUsdt = IERC20(USDT_TOKEN).balanceOf(address(this));
         IERC20(USDT_TOKEN).forceApprove(V3_ROUTER, totalUsdt);
         ISwapRouterV3(V3_ROUTER).exactOutputSingle(ISwapRouterV3.ExactOutputSingleParams({
